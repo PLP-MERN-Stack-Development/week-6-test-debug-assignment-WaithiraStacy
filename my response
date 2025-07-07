@@ -1,0 +1,104 @@
+// File: backend/tests/user.test.js (Integration & Unit Testing with Supertest and Jest)
+
+const request = require('supertest');
+const app = require('../server');
+const mongoose = require('mongoose');
+const User = require('../models/User');
+
+beforeAll(async () => {
+  await mongoose.connect(process.env.MONGO_URI_TEST);
+});
+
+afterAll(async () => {
+  await mongoose.connection.close();
+});
+
+describe('User Registration API', () => {
+  it('should register a user', async () => {
+    const res = await request(app).post('/api/register').send({
+      name: 'Test User',
+      email: 'test@example.com',
+      password: '123456'
+    });
+    expect(res.statusCode).toBe(201);
+    expect(res.body).toHaveProperty('token');
+  });
+});
+
+// File: backend/utils/validator.test.js (Unit Testing Utilities)
+const { validateEmail } = require('../utils/validator');
+
+test('validateEmail should return true for valid emails', () => {
+  expect(validateEmail('test@example.com')).toBe(true);
+});
+
+test('validateEmail should return false for invalid emails', () => {
+  expect(validateEmail('testexample.com')).toBe(false);
+});
+
+// File: frontend/src/__tests__/LoginForm.test.js (React Component Test)
+import { render, screen, fireEvent } from '@testing-library/react';
+import LoginForm from '../components/LoginForm';
+
+test('renders login form and submits', () => {
+  render(<LoginForm />);
+  fireEvent.change(screen.getByLabelText(/email/i), {
+    target: { value: 'user@example.com' },
+  });
+  fireEvent.change(screen.getByLabelText(/password/i), {
+    target: { value: 'password123' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: /login/i }));
+  expect(screen.getByText(/loading/i)).toBeInTheDocument();
+});
+
+// File: cypress/e2e/auth.cy.js (End-to-End Testing with Cypress)
+describe('Authentication Flow', () => {
+  it('should allow user to register and login', () => {
+    cy.visit('/register');
+    cy.get('input[name="name"]').type('New User');
+    cy.get('input[name="email"]').type('new@example.com');
+    cy.get('input[name="password"]').type('password123');
+    cy.get('button[type="submit"]').click();
+    cy.url().should('include', '/dashboard');
+  });
+});
+
+// File: backend/middleware/errorHandler.js (Global Error Handler)
+function errorHandler(err, req, res, next) {
+  console.error(err.stack);
+  res.status(500).json({ message: 'Something went wrong' });
+}
+
+module.exports = errorHandler;
+
+// Add this middleware in server.js after routes
+// const errorHandler = require('./middleware/errorHandler');
+// app.use(errorHandler);
+
+// File: frontend/src/ErrorBoundary.jsx
+import React from 'react';
+
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("React error boundary caught", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <h1>Something went wrong.</h1>;
+    }
+    return this.props.children;
+  }
+}
+
+export default ErrorBoundary;
